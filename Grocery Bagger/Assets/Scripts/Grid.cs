@@ -2,13 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Grid
-{
+public class Grid<TGridObject>{
     private int width;
     private int height;
     private float tileSize;
     private Vector3 originPosition;
-    private int[,] gridArray;
+    private TGridObject[,] gridArray;
     private TextMesh[,] debugTextArray;
 
     public Grid(int width, int height, float tileSize = 10f, Vector3? originPosition = null) {
@@ -20,7 +19,7 @@ public class Grid
         }
         this.originPosition = (Vector3)originPosition;
 
-        gridArray = new int[width, height];
+        gridArray = new TGridObject[width, height];
         debugTextArray = new TextMesh[width, height];
 
         Debug.Log(width + " " + height);
@@ -46,31 +45,32 @@ public class Grid
         y = Mathf.FloorToInt((worldPosition - originPosition).y / tileSize);
     }
 
-    public void SetValue(int x, int y, int value) {
+    public void SetValue(int x, int y, TGridObject value) {
         if (x >= 0 && y >= 0 && x < width && y < height) {
             gridArray[x,y] = value;
             debugTextArray[x,y].text = gridArray[x,y].ToString();
         }
-        else
-            Debug.LogWarning("trying to set " + value + " to invalid position: (" + x + ", " + y + ")");
+        else {
+            //Debug.LogWarning("trying to set " + value + " to invalid position: (" + x + ", " + y + ")");
+        }
     }
 
-    public void SetValue(Vector3 worldPosition, int value) {
+    public void SetValue(Vector3 worldPosition, TGridObject value) {
         int x, y;
         GetGridPosition(worldPosition, out x, out y);
         SetValue(x,y,value);
     }
 
-    public int GetValue(int x, int y) {
+    public TGridObject GetValue(int x, int y) {
         if (x >= 0 && y >= 0 && x < width && y < height)
             return gridArray[x,y];
         else {
-            Debug.LogWarning("trying to get a value at invalid position: (" + x + ", " + y + ")");
-            return -1;
+            //Debug.LogWarning("trying to get a value at invalid position: (" + x + ", " + y + ")");
+            return default(TGridObject);
         }
     }
 
-    public int GetValue(Vector3 worldPosition) {
+    public TGridObject GetValue(Vector3 worldPosition) {
         int x, y;
         GetGridPosition(worldPosition, out x, out y);
         return GetValue(x, y);
