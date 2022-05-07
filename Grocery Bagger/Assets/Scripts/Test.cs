@@ -6,27 +6,27 @@ public class Test : MonoBehaviour
 {
     private Grid<int> gridInt;
     private Grid<bool> gridBool;
-    private Grid<ItemGridObject> grid;
+    private ItemGrid<ItemGridObject> itemGrid;
     private const float tileSize = 10f;
     public List<Item> items; 
     
     private void Start()
     {
-        //gridInt = new Grid<int>(5,2, tileSize, new Vector3(20, 0));
-        //gridBool = new Grid<bool>(5,2, tileSize, new Vector3(-20, 0));
-        items.Add(new Item(2, 1, tileSize));
-        items.Add(new Item(2, 1, tileSize));
-        Debug.Log("items: " + items.Count);
-        for(int i = 0; i < items.Count; ++i) {
-            Debug.Log("ID: " + items[i].getID());
-        }
-        grid = new Grid<ItemGridObject>(10, 10, tileSize, new Vector3(-10,-10), () => new ItemGridObject());
+        // items.Add(new Item(2, 1, tileSize));
+        // items.Add(new Item(2, 1, tileSize));
+        // Debug.Log("items: " + items.Count);
+        // for(int i = 0; i < items.Count; ++i) {
+        //     Debug.Log("ID: " + items[i].getID());
+        // }
+        itemGrid = new ItemGrid<ItemGridObject>(10, 10, tileSize, new Vector3(-50,-50), 
+                                                (Grid<ItemGridObject> g, int x, int y) => new ItemGridObject(g,x,y), true);
     }
     private void Update() {
-        if(Input.GetMouseButtonDown(0)) {
-            //gridInt.SetValue(GetMouseWorldPosition(), gridInt.GetValue(GetMouseWorldPosition()) + 1);
-            //gridBool.SetValue(GetMouseWorldPosition(), !gridBool.GetValue(GetMouseWorldPosition()));
-            grid.SetValue(GetMouseWorldPosition(), (grid.GetValue(GetMouseWorldPosition()).state == State.Empty) ? new ItemGridObject(State.Used) : new ItemGridObject(State.Empty));
+        if(Input.GetMouseButtonDown(0)) {           
+            ItemGridObject itemGridObject = itemGrid.GetData(GetMouseWorldPosition());
+            if(itemGridObject != null) {
+                itemGridObject.setState((itemGridObject.getState() == State.Empty) ? State.Used : State.Empty);
+            }
         }
     }
     public static Vector3 GetMouseWorldPosition() {
