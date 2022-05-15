@@ -2,11 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//Create an item to be placed at the corresponding cell given the mouse position.
 public class ItemGhost : MonoBehaviour {
 
     private RectTransform rectTransform;
     private Transform visual;
-    private PlacedItem placedItem;
+    private PlacedObjectTypeSO placedObjectTypeSO;
 
     private void Awake() {
         rectTransform = GetComponent<RectTransform>();
@@ -26,7 +27,7 @@ public class ItemGhost : MonoBehaviour {
         Vector2 targetPosition = ManualPlacement.Instance.GetCanvasSnappedPosition();
 
         rectTransform.anchoredPosition = Vector2.Lerp(rectTransform.anchoredPosition, targetPosition, Time.deltaTime * 15f);
-        transform.rotation = Quaternion.Lerp(transform.rotation, ManualPlacement.Instance.GetPlacedItemRotation(), Time.deltaTime * 15f);
+        transform.rotation = Quaternion.Lerp(transform.rotation, ManualPlacement.Instance.GetPlacedObjectRotation(), Time.deltaTime * 15f);
     }
 
     private void RefreshVisual() {
@@ -35,10 +36,10 @@ public class ItemGhost : MonoBehaviour {
             visual = null;
         }
 
-        PlacedItem placedItem = ManualPlacement.Instance.GetPlacedItem();
+        PlacedObjectTypeSO placedObjectTypeSO = ManualPlacement.Instance.GetPlacedObjectTypeSO();
 
-        if (placedItem != null) {
-            visual = Instantiate(placedItem.GetItem().visual, transform);
+        if (placedObjectTypeSO != null) {
+            visual = Instantiate(placedObjectTypeSO.visual, transform);
             visual.localPosition = Vector3.zero;
             visual.localEulerAngles = Vector3.zero;
         }

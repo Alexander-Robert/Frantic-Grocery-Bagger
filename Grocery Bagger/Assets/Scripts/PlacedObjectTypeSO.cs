@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//contains info to properly orient and display items based of a prefab of the object and it's visual component.
 [CreateAssetMenu()]
 public class PlacedObjectTypeSO : ScriptableObject {
 

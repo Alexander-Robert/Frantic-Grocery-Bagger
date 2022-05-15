@@ -3,41 +3,40 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Inventory : MonoBehaviour
-{
-    public static Inventory Instance {get; private set;}
-    public event EventHandler<PlacedItem> OnObjectPlaced;
-    private ItemGrid<ItemGridObject> grid;
+public class Inventory : MonoBehaviour {
+
+    public static Inventory Instance { get; private set; }
+    public event EventHandler<PlacedObject> OnObjectPlaced;
+    public int gridWidth, gridHeight;
+    public float cellSize;
+    private Grid<GridObject> grid;
     private RectTransform itemContainer;
 
     private void Awake() {
         Instance = this;
-        int gridWidth = 10;
-        int gridHeight = 10;
-        float tileSize = 10f;
-        grid = new ItemGrid<ItemGridObject>(gridWidth, gridHeight, tileSize, new Vector3(0,0,0), 
-                                            (Grid<ItemGridObject> g, int x, int y) => new ItemGridObject(g,x,y), true);
+        //passing a llambda function to the Grid so that each GridObject gets constructed such that it has a reference to the grid and coordinates.
+        grid = new Grid<GridObject>(gridWidth, gridHeight, cellSize, new Vector3(0, 0, 0), (Grid<GridObject> g, int x, int y) => new GridObject(g, x, y));
         itemContainer = transform.Find("ItemContainer").GetComponent<RectTransform>();
         transform.Find("BackgroundTempVisual").gameObject.SetActive(false);
     }
 
-    public ItemGrid<ItemGridObject> GetGrid() {return grid;}
+    public Grid<GridObject> GetGrid() {
+        return grid;
+    }
 
     public Vector2Int GetGridPosition(Vector3 worldPosition) {
-        grid.GetGridPosition(worldPosition, out int x, out int y);
-        return new Vector2Int(x, y);
+        grid.GetXY(worldPosition, out int x, out int z);
+        return new Vector2Int(x, z);
     }
 
     public bool IsValidGridPosition(Vector2Int gridPosition) {
         return grid.IsValidGridPosition(gridPosition);
     }
 
-     public bool TryPlaceItem(ItemSO item, Vector2Int itemOrigin, Item.Dir dir) {
+    public bool TryPlaceItem(ItemSO itemSO, Vector2Int placedObjectOrigin, PlacedObjectTypeSO.Dir dir) {
         // Test Can Build
-        List<Vector2Int> gridPositionList = item.GetGridPositionList(itemOrigin, dir);
+        List<Vector2Int> gridPositionList = itemSO.GetGridPositionList(placedObjectOrigin, dir);
         bool canPlace = true;
-
-        //For each tile that the item takes up, check if it's possible to place the item there.
         foreach (Vector2Int gridPosition in gridPositionList) {
             bool isValidPosition = grid.IsValidGridPosition(gridPosition);
             if (!isValidPosition) {
@@ -45,7 +44,7 @@ public class Inventory : MonoBehaviour
                 canPlace = false;
                 break;
             }
-            if (!grid.GetData(gridPosition.x, gridPosition.y).canPlace()) {
+            if (!grid.GetGridObject(gridPosition.x, gridPosition.y).CanBuild()) {
                 canPlace = false;
                 break;
             }
@@ -53,7 +52,7 @@ public class Inventory : MonoBehaviour
 
         if (canPlace) {
             foreach (Vector2Int gridPosition in gridPositionList) {
-                if (!grid.GetData(gridPosition.x, gridPosition.y).canPlace()) {
+                if (!grid.GetGridObject(gridPosition.x, gridPosition.y).CanBuild()) {
                     canPlace = false;
                     break;
                 }
@@ -61,33 +60,31 @@ public class Inventory : MonoBehaviour
         }
 
         if (canPlace) {
-            Vector2Int rotationOffset = item.GetRotationOffset(dir);
-            Vector3 placedObjectWorldPosition = grid.GetWorldPosition(itemOrigin.x, itemOrigin.y) + new Vector3(rotationOffset.x, rotationOffset.y) * grid.TileSize;
+            //if we can place the item, get it's properties, add it to the grid and list tracking placed items.
+            Vector2Int rotationOffset = itemSO.GetRotationOffset(dir);
+            Vector3 placedObjectWorldPosition = grid.GetWorldPosition(placedObjectOrigin.x, placedObjectOrigin.y) + new Vector3(rotationOffset.x, rotationOffset.y) * grid.GetCellSize();
 
-            PlacedItem placedObject = PlacedItem.CreateCanvas(itemContainer, placedObjectWorldPosition, itemOrigin, dir, item);
-            placedObject.transform.rotation = Quaternion.Euler(0, 0, -item.GetRotationAngle(dir));
+            PlacedObject placedObject = PlacedObject.CreateCanvas(itemContainer, placedObjectWorldPosition, placedObjectOrigin, dir, itemSO);
+            placedObject.transform.rotation = Quaternion.Euler(0, 0, -itemSO.GetRotationAngle(dir));
 
             placedObject.GetComponent<DragDrop>().Setup(this);
 
             foreach (Vector2Int gridPosition in gridPositionList) {
-                grid.GetData(gridPosition.x, gridPosition.y).setState(State.Used);
+                grid.GetGridObject(gridPosition.x, gridPosition.y).SetPlacedObject(placedObject);
             }
 
-            //TODO see if this implementation works or if I have to configure it using the placedObject
-            //OnObjectPlaced?.Invoke(this, placedObject);
             OnObjectPlaced?.Invoke(this, placedObject);
 
             // Object Placed!
             return true;
-        } 
-        else {
+        } else {
             // Object CANNOT be placed!
             return false;
         }
     }
 
     public void RemoveItemAt(Vector2Int removeGridPosition) {
-        PlacedItem placedObject = grid.GetData(removeGridPosition.x, removeGridPosition.y).GetItem();
+        PlacedObject placedObject = grid.GetGridObject(removeGridPosition.x, removeGridPosition.y).GetPlacedObject();
 
         if (placedObject != null) {
             // Demolish
@@ -95,7 +92,7 @@ public class Inventory : MonoBehaviour
 
             List<Vector2Int> gridPositionList = placedObject.GetGridPositionList();
             foreach (Vector2Int gridPosition in gridPositionList) {
-                grid.GetData(gridPosition.x, gridPosition.y).ClearItem();
+                grid.GetGridObject(gridPosition.x, gridPosition.y).ClearPlacedObject();
             }
         }
     }
@@ -107,47 +104,49 @@ public class Inventory : MonoBehaviour
 
 
     [Serializable]
-    public struct AddItemTetris {
-        public string itemTetrisSOName;
+    public struct AddItem {
+        public string itemSOName;
         public Vector2Int gridPosition;
-        public Item.Dir dir;
+        public PlacedObjectTypeSO.Dir dir;
     }
 
     [Serializable]
-    public struct ListAddItemTetris {
-        public List<AddItemTetris> addItemTetrisList;
+    public struct ListAddItem {
+        public List<AddItem> addItemList;
     }
 
     public string Save() {
-        List<PlacedItem> placedObjectList = new List<PlacedItem>();
-        for (int x = 0; x < grid.Width; x++) {
-            for (int y = 0; y < grid.Height; y++) {
-                if (grid.GetData(x, y).getState() == State.Used) {
-                    //TODO redefine placedItem so that it handles everything for Items (AKA change grid to a grid of placedItems) 
-                    placedObjectList.Remove(grid.GetData(x, y).GetItem()); 
-                    placedObjectList.Add(grid.GetData(x, y).GetItem());
+        //Get all items placed in the grid and stringify it as a JSON so that we can load it easily in another instance
+        List<PlacedObject> placedObjectList = new List<PlacedObject>();
+        for (int x = 0; x < grid.GetWidth(); x++) {
+            for (int y = 0; y < grid.GetHeight(); y++) {
+                if (grid.GetGridObject(x, y).HasPlacedObject()) {
+                    placedObjectList.Remove(grid.GetGridObject(x, y).GetPlacedObject());
+                    placedObjectList.Add(grid.GetGridObject(x, y).GetPlacedObject());
                 }
             }
         }
 
-        List<AddItemTetris> addItemTetrisList = new List<AddItemTetris>();
-        foreach (PlacedItem placedObject in placedObjectList) {
-            addItemTetrisList.Add(new AddItemTetris {
+        List<AddItem> addItemList = new List<AddItem>();
+        foreach (PlacedObject placedObject in placedObjectList) {
+            addItemList.Add(new AddItem {
                 dir = placedObject.GetDir(),
                 gridPosition = placedObject.GetGridPosition(),
-                itemTetrisSOName = (placedObject.GetItem() as Item).name,
+                itemSOName = (placedObject.GetPlacedObjectTypeSO() as ItemSO).name,
             });
 
         }
 
-        return JsonUtility.ToJson(new ListAddItemTetris { addItemTetrisList = addItemTetrisList });
+        return JsonUtility.ToJson(new ListAddItem { addItemList = addItemList });
     }
 
     public void Load(string loadString) {
-        ListAddItemTetris listAddItemTetris = JsonUtility.FromJson<ListAddItemTetris>(loadString);
+        //unpack the Json info and try to place each item back where it was.
+        ListAddItem listAddItem = JsonUtility.FromJson<ListAddItem>(loadString);
 
-        foreach (AddItemTetris addItemTetris in listAddItemTetris.addItemTetrisList) {
-            TryPlaceItem(InventoryAssets.Instance.GetItemSOFromName(addItemTetris.itemTetrisSOName), addItemTetris.gridPosition, addItemTetris.dir);
+        foreach (AddItem addItem in listAddItem.addItemList) {
+            TryPlaceItem(InventoryAssets.Instance.GetItemSOFromName(addItem.itemSOName), addItem.gridPosition, addItem.dir);
         }
     }
+
 }

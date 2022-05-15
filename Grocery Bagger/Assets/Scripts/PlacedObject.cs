@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//Ensure that placedObjects are able to interact with and update the grid as well as manage the properties of the scriptable object type
 public class PlacedObject : MonoBehaviour {
 
     public static PlacedObject Create(Vector3 worldPosition, Vector2Int origin, PlacedObjectTypeSO.Dir dir, PlacedObjectTypeSO placedObjectTypeSO) {
@@ -48,7 +49,7 @@ public class PlacedObject : MonoBehaviour {
 
     protected virtual void TriggerGridObjectChanged() {
         foreach (Vector2Int gridPosition in GetGridPositionList()) {
-            Grid<GridObject>.Instance.GetData(gridPosition).TriggerGridObjectChanged();
+            Grid<GridObject>.Instance.GetGridObject(gridPosition).TriggerGridObjectChanged();
         }
     }
 

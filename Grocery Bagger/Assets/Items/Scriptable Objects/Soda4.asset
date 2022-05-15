@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 612ec5e0fa3d570499878a6afb91a04a, type: 3}
-  m_Name: Eggs
+  m_Name: Soda4
   m_EditorClassIdentifier: 
   nameString: 
-  prefab: {fileID: 6668411697463800842, guid: d9b62aa9cd2e7e6428e9b3a9e43652a3, type: 3}
-  visual: {fileID: 2695619964128182432, guid: a3568564265fd404b9b40e4bbb40de3e, type: 3}
-  width: 2
-  height: 1
+  prefab: {fileID: 3715221732018013743, guid: df0253bd2cc82df4e921ed2d8617beb7, type: 3}
+  visual: {fileID: 2205607445792767394, guid: 2d4862767e90701409db32dd04ba872d, type: 3}
+  width: 1
+  height: 3

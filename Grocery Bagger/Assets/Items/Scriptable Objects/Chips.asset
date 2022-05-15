@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 612ec5e0fa3d570499878a6afb91a04a, type: 3}
-  m_Name: Eggs
+  m_Name: Chips
   m_EditorClassIdentifier: 
   nameString: 
-  prefab: {fileID: 6668411697463800842, guid: d9b62aa9cd2e7e6428e9b3a9e43652a3, type: 3}
-  visual: {fileID: 2695619964128182432, guid: a3568564265fd404b9b40e4bbb40de3e, type: 3}
+  prefab: {fileID: 2196079343182330120, guid: e4c07742c8f20a64ba94da6df8458724, type: 3}
+  visual: {fileID: 5646090254625068257, guid: 87bf2442abd624949aee7cfd00549872, type: 3}
   width: 2
-  height: 1
+  height: 3

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//Handle all the items in the form of Scriptable Objects.
 public class InventoryAssets : MonoBehaviour
 {
 public static InventoryAssets Instance { get; private set; }

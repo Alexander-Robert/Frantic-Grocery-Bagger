@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//the logic to ensure the player can move items between cells and inventories and rotate objects without their positioning changing
 public class DragDropSystem : MonoBehaviour {
 
     public static DragDropSystem Instance { get; private set; }
@@ -11,10 +12,10 @@ public class DragDropSystem : MonoBehaviour {
     [SerializeField] private List<Inventory> inventoryList;
 
     private Inventory draggingInventory;
-    private PlacedItem draggingPlacedItem;
+    private PlacedObject draggingPlacedObject;
     private Vector2Int mouseDragGridPositionOffset;
     private Vector2 mouseDragAnchoredPositionOffset;
-    private Item.Dir dir;
+    private PlacedObjectTypeSO.Dir dir;
 
 
     private void Awake() {
@@ -23,7 +24,7 @@ public class DragDropSystem : MonoBehaviour {
 
     private void Start() {
         foreach (Inventory inventory in inventoryList) {
-            inventory.OnObjectPlaced += (object sender, PlacedItem placedItem) => {
+            inventory.OnObjectPlaced += (object sender, PlacedObject placedObject) => {
 
             };
         }
@@ -31,17 +32,17 @@ public class DragDropSystem : MonoBehaviour {
 
     private void Update() {
         if (Input.GetKeyDown(KeyCode.R)) {
-            dir = Item.GetNextDirClockWise(dir);
+            dir = PlacedObjectTypeSO.GetNextDir(dir);
         }
 
-        if (draggingPlacedItem != null) {
+        if (draggingPlacedObject != null) {
             // Calculate target position to move the dragged item
             RectTransformUtility.ScreenPointToLocalPointInRectangle(draggingInventory.GetItemContainer(), Input.mousePosition, null, out Vector2 targetPosition);
             targetPosition += new Vector2(-mouseDragAnchoredPositionOffset.x, -mouseDragAnchoredPositionOffset.y);
 
             // Apply rotation offset to target position
-            Vector2Int rotationOffset = draggingPlacedItem.GetItem().GetRotationOffset(dir);
-            targetPosition += new Vector2(rotationOffset.x, rotationOffset.y) * draggingInventory.GetGrid().TileSize;
+            Vector2Int rotationOffset = draggingPlacedObject.GetPlacedObjectTypeSO().GetRotationOffset(dir);
+            targetPosition += new Vector2(rotationOffset.x, rotationOffset.y) * draggingInventory.GetGrid().GetCellSize();
 
             // Snap position
             targetPosition /= 10f;// draggingInventory.GetGrid().GetCellSize();
@@ -49,43 +50,43 @@ public class DragDropSystem : MonoBehaviour {
             targetPosition *= 10f;
 
             // Move and rotate dragged Item
-            draggingPlacedItem.GetComponent<RectTransform>().anchoredPosition = Vector2.Lerp(draggingPlacedItem.GetComponent<RectTransform>().anchoredPosition, targetPosition, Time.deltaTime * 20f);
-            draggingPlacedItem.transform.rotation = Quaternion.Lerp(draggingPlacedItem.transform.rotation, Quaternion.Euler(0, 0, -draggingPlacedItem.GetItem().GetRotationAngle(dir)), Time.deltaTime * 15f);
+            draggingPlacedObject.GetComponent<RectTransform>().anchoredPosition = Vector2.Lerp(draggingPlacedObject.GetComponent<RectTransform>().anchoredPosition, targetPosition, Time.deltaTime * 20f);
+            draggingPlacedObject.transform.rotation = Quaternion.Lerp(draggingPlacedObject.transform.rotation, Quaternion.Euler(0, 0, -draggingPlacedObject.GetPlacedObjectTypeSO().GetRotationAngle(dir)), Time.deltaTime * 15f);
         }
     }
 
-    public void StartedDragging(Inventory inventory, PlacedItem placedItem) {
+    public void StartedDragging(Inventory inventory, PlacedObject placedObject) {
         // Started Dragging
         draggingInventory = inventory;
-        draggingPlacedItem = placedItem;
+        draggingPlacedObject = placedObject;
 
         Cursor.visible = false;
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(inventory.GetItemContainer(), Input.mousePosition, null, out Vector2 anchoredPosition);
         Vector2Int mouseGridPosition = inventory.GetGridPosition(anchoredPosition);
 
-        // Calculate Grid Position offset from the placedItem origin to the mouseGridPosition
-        mouseDragGridPositionOffset = mouseGridPosition - placedItem.GetGridPosition();
+        // Calculate Grid Position offset from the placedObject origin to the mouseGridPosition
+        mouseDragGridPositionOffset = mouseGridPosition - placedObject.GetGridPosition();
 
         // Calculate the anchored poisiton offset, where exactly on the image the player clicked
-        mouseDragAnchoredPositionOffset = anchoredPosition - placedItem.GetComponent<RectTransform>().anchoredPosition;
+        mouseDragAnchoredPositionOffset = anchoredPosition - placedObject.GetComponent<RectTransform>().anchoredPosition;
 
         // Save initial direction when started draggign
-        dir = placedItem.GetDir();
+        dir = placedObject.GetDir();
 
         // Apply rotation offset to drag anchored position offset
-        Vector2Int rotationOffset = draggingPlacedItem.GetItem().GetRotationOffset(dir);
-        mouseDragAnchoredPositionOffset += new Vector2(rotationOffset.x, rotationOffset.y) * draggingInventory.GetGrid().TileSize;
+        Vector2Int rotationOffset = draggingPlacedObject.GetPlacedObjectTypeSO().GetRotationOffset(dir);
+        mouseDragAnchoredPositionOffset += new Vector2(rotationOffset.x, rotationOffset.y) * draggingInventory.GetGrid().GetCellSize();
     }
 
-    public void StoppedDragging(Inventory fromInventory, PlacedItem placedItem) {
+    public void StoppedDragging(Inventory fromInventory, PlacedObject placedObject) {
         draggingInventory = null;
-        draggingPlacedItem = null;
+        draggingPlacedObject = null;
 
         Cursor.visible = true;
 
         // Remove item from its current inventory
-        fromInventory.RemoveItemAt(placedItem.GetGridPosition());
+        fromInventory.RemoveItemAt(placedObject.GetGridPosition());
 
         Inventory toInventory = null;
 
@@ -93,10 +94,10 @@ public class DragDropSystem : MonoBehaviour {
         foreach (Inventory inventory in inventoryList) {
             Vector3 screenPoint = Input.mousePosition;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(inventory.GetItemContainer(), screenPoint, null, out Vector2 anchoredPosition);
-            Vector2Int placedItemOrigin = inventory.GetGridPosition(anchoredPosition);
-            placedItemOrigin = placedItemOrigin - mouseDragGridPositionOffset;
+            Vector2Int placedObjectOrigin = inventory.GetGridPosition(anchoredPosition);
+            placedObjectOrigin = placedObjectOrigin - mouseDragGridPositionOffset;
 
-            if (inventory.IsValidGridPosition(placedItemOrigin)) {
+            if (inventory.IsValidGridPosition(placedObjectOrigin)) {
                 toInventory = inventory;
                 break;
             }
@@ -106,10 +107,10 @@ public class DragDropSystem : MonoBehaviour {
         if (toInventory != null) {
             Vector3 screenPoint = Input.mousePosition;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(toInventory.GetItemContainer(), screenPoint, null, out Vector2 anchoredPosition);
-            Vector2Int placedItemOrigin = toInventory.GetGridPosition(anchoredPosition);
-            placedItemOrigin = placedItemOrigin - mouseDragGridPositionOffset;
+            Vector2Int placedObjectOrigin = toInventory.GetGridPosition(anchoredPosition);
+            placedObjectOrigin = placedObjectOrigin - mouseDragGridPositionOffset;
 
-            bool tryPlaceItem = toInventory.TryPlaceItem(placedItem.GetItem() as Item, placedItemOrigin, dir);
+            bool tryPlaceItem = toInventory.TryPlaceItem(placedObject.GetPlacedObjectTypeSO() as ItemSO, placedObjectOrigin, dir);
 
             if (tryPlaceItem) {
                 // Item placed!
@@ -117,7 +118,7 @@ public class DragDropSystem : MonoBehaviour {
                 // Cannot drop item here!
 
                 // Drop on original position
-                fromInventory.TryPlaceItem(placedItem.GetItem() as Item, placedItem.GetGridPosition(), placedItem.GetDir());
+                fromInventory.TryPlaceItem(placedObject.GetPlacedObjectTypeSO() as ItemSO, placedObject.GetGridPosition(), placedObject.GetDir());
             }
         } else {
             // Not on top of any Inventory !
@@ -125,7 +126,7 @@ public class DragDropSystem : MonoBehaviour {
             // Cannot drop item here!
 
             // Drop on original position
-            fromInventory.TryPlaceItem(placedItem.GetItem() as Item, placedItem.GetGridPosition(), placedItem.GetDir());
+            fromInventory.TryPlaceItem(placedObject.GetPlacedObjectTypeSO() as ItemSO, placedObject.GetGridPosition(), placedObject.GetDir());
         }
     }
 

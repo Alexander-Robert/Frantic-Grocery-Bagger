@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+
+//Create and manage the visual components of the scriptable object
 [CreateAssetMenu()]
 public class ItemSO : PlacedObjectTypeSO {
     public static void CreateVisualGrid(Transform visualParentTransform, ItemSO itemSO, float cellSize) {

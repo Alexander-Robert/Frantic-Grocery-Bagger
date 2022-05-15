@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+//handle logic for holding an item in hand (AKA dragging/moving it to a different spot)
 public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IEndDragHandler, IDragHandler {
 
     private Canvas canvas;
@@ -10,13 +11,13 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
     private CanvasGroup canvasGroup;
 
     private Inventory inventory;
-    private PlacedItem placedItem;
+    private PlacedObject placedObject;
 
     private void Awake() {
         canvas = GetComponentInParent<Canvas>();
         rectTransform = GetComponent<RectTransform>();
         canvasGroup = GetComponent<CanvasGroup>();
-        placedItem = GetComponent<PlacedItem>();
+        placedObject = GetComponent<PlacedObject>();
     }
 
     public void Setup(Inventory inventory) {
@@ -28,8 +29,8 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
         canvasGroup.alpha = .7f;
         canvasGroup.blocksRaycasts = false;
 
-        Item.CreateVisualGrid(transform.GetChild(0), placedItem.GetItem() as Item, inventory.GetGrid().TileSize);
-        DragDropSystem.Instance.StartedDragging(inventory, placedItem);
+        ItemSO.CreateVisualGrid(transform.GetChild(0), placedObject.GetPlacedObjectTypeSO() as ItemSO, inventory.GetGrid().GetCellSize());
+        DragDropSystem.Instance.StartedDragging(inventory, placedObject);
     }
 
     public void OnDrag(PointerEventData eventData) {
@@ -42,7 +43,7 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
-        DragDropSystem.Instance.StoppedDragging(inventory, placedItem);
+        DragDropSystem.Instance.StoppedDragging(inventory, placedObject);
     }
 
     public void OnPointerDown(PointerEventData eventData) {

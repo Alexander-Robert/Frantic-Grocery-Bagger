@@ -16,25 +16,27 @@ public class Test : MonoBehaviour
     }
 
     private void Update() {
+        //have players open a new inventory to pull from
         if (Input.GetKeyDown(KeyCode.Space)) {
             outerInventoryBackground.gameObject.SetActive(true);
             outerInventory.Load(addItemSaveList[addItemSaveListIndex]);
 
             addItemSaveListIndex = (addItemSaveListIndex + 1) % addItemSaveList.Count;
         }
-
+        //modifying the open inventory allows us to make new saves for new inventories.
         if (Input.GetKeyDown(KeyCode.P)) {
             Debug.Log(inventory.Save());
         }
     }
 
-    public static Vector3 GetMouseWorldPosition() {
-        Vector3 vec = GetMouseWorldPositionWithZ(Input.mousePosition, Camera.main);
-        vec.z = 0f;
-        return vec;
-    }
-    public static Vector3 GetMouseWorldPositionWithZ(Vector3 screenPosition, Camera worldCamera) {
-        Vector3 worldPosition = worldCamera.ScreenToWorldPoint(screenPosition);
-        return worldPosition;
-    }
+    //unused legacy code
+    // public static Vector3 GetMouseWorldPosition() {
+    //     Vector3 vec = GetMouseWorldPositionWithZ(Input.mousePosition, Camera.main);
+    //     vec.z = 0f;
+    //     return vec;
+    // }
+    // public static Vector3 GetMouseWorldPositionWithZ(Vector3 screenPosition, Camera worldCamera) {
+    //     Vector3 worldPosition = worldCamera.ScreenToWorldPoint(screenPosition);
+    //     return worldPosition;
+    // }
 }
