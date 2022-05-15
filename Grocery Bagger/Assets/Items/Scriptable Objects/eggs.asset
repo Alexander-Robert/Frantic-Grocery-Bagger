@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 612ec5e0fa3d570499878a6afb91a04a, type: 3}
+  m_Name: eggs
+  m_EditorClassIdentifier: 
+  nameString: 
+  prefab: {fileID: 6668411697463800842, guid: d9b62aa9cd2e7e6428e9b3a9e43652a3, type: 3}
+  visual: {fileID: 2695619964128182432, guid: a3568564265fd404b9b40e4bbb40de3e, type: 3}
+  width: 2
+  height: 1

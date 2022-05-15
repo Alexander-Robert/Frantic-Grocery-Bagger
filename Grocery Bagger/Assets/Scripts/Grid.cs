@@ -8,6 +8,7 @@ public class Grid<DataType> {
 
     //c# {get; set;} "auto property"
     //https://stackoverflow.com/questions/5096926/what-is-the-get-set-syntax-in-c
+    public static Grid<DataType> Instance {get; private set;}
     protected int width;
     public int Width { get; set; }
     protected int height;
@@ -35,6 +36,7 @@ public class Grid<DataType> {
     /// <param name="createGridObject">(Lambda) Object-type grids require passing a lambda operator (the arrow functions) to creat a new object of that type</param>
     /// <param name="showDebug">(Bool) Set to true if you want to see the data value displayed in the center of each tile. For objects, display whatever you want by overridding the ToString() method in the class definition of your object type</param>
     public Grid(int width, int height, float tileSize = 10f, Vector3? originPosition = null, Func<DataType> createGridObject = null, bool showDebug = false) {
+        Instance = this;
         this.width = width;
         this.height = height;
         this.tileSize = tileSize;
@@ -99,13 +101,13 @@ public class Grid<DataType> {
     /// <param name="showDebug">(Bool) Set to true if you want to see the data value displayed in the center of each tile. For objects, display whatever you want by overridding the ToString() method in the class definition of your object type</param>
     public Grid(int width, int height, float tileSize = 10f, Vector3? originPosition = null, bool showDebug = false) : this(width, height, tileSize, originPosition, null, showDebug){}
 
-    protected Vector3 GetWorldPosition(int x, int y) {
+    public Vector3 GetWorldPosition(int x, int y) {
         return new Vector3(x,y) * tileSize + originPosition;
     }
 
     //out keyword denotes returning multiple values. Much nicer than passing by reference in parameter arguements in C++
     //TODO see if this is the same as c++ pass by reference or if it's copying *from* the arguement AND *to* the argument.
-    protected void GetGridPosition(Vector3 worldPosition, out int x, out int y) {
+    public void GetGridPosition(Vector3 worldPosition, out int x, out int y) {
         x = Mathf.FloorToInt((worldPosition - originPosition).x / tileSize);
         y = Mathf.FloorToInt((worldPosition - originPosition).y / tileSize);
     }
@@ -114,7 +116,8 @@ public class Grid<DataType> {
         if (x >= 0 && y >= 0 && x < width && y < height) {
             gridArray[x,y] = data;
             //have the event handler trigger on successful assignment of new data
-            if (OnGridObjectChanged != null) OnGridObjectChanged(this, new OnGridObjectChangedEventArgs {x = x, y = y});
+            if (OnGridObjectChanged != null) 
+                TriggerGridObjectChanged(x, y);
             if (showDebug)
                 debugTextArray[x,y].text = gridArray[x,y]?.ToString();
             return true;
@@ -139,7 +142,9 @@ public class Grid<DataType> {
     //Public function to update the event handler given an x, y cell coordinate
     //See ItemGridObject setState() to see where this is used and understand better why we have weird referencing properties in each object.
     public void TriggerGridObjectChanged(int x, int y) {
-        if(OnGridObjectChanged != null) OnGridObjectChanged(this, new OnGridObjectChangedEventArgs {x = x, y = y});
+        //quicker shorthand and thread safe version of (if OnGridObjectChanged != null) -> make new event given the args
+        //https://stackoverflow.com/questions/14703698/invokedelegate
+        OnGridObjectChanged?.Invoke(this, new OnGridObjectChangedEventArgs {x = x, y = y});
     }
     public DataType GetData(int x, int y) {
         if (x >= 0 && y >= 0 && x < width && y < height)
@@ -157,7 +162,22 @@ public class Grid<DataType> {
         return GetData(x, y);
     }
 
+    public DataType GetData(Vector2Int coordinatePosition) {
+        return GetData(coordinatePosition.x, coordinatePosition.y);
+    }
 
+    //Check bounds.
+    public bool IsValidGridPosition(Vector2Int gridPosition) {
+        int x = gridPosition.x;
+        int y = gridPosition.y;
+
+        if (x >= 0 && y >= 0 && x < width && y < height)
+            return true;
+        else
+            return false;
+    }
+
+    //only used for the showDebug of text to provide programmers with an easy means to see how the data in each tile is being updated.
     //calls the overloaded CreateWorldText() function given default parameter options
     public static TextMesh CreateWorldText(string text, Transform parent = null, Vector3 localPosition = default(Vector3), 
                                           int fontSize = 40, Color? color = null, TextAnchor textAnchor = TextAnchor.UpperLeft, 

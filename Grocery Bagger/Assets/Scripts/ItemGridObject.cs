@@ -8,6 +8,7 @@ public enum State {Empty, Used, HoverEmpty, HoverUsed}
 
 /// <summary>Object to handle the current state of each grid tile in relation to item placement</summary>
 public class ItemGridObject {
+    public PlacedItem placedItem;
     private State state; //default state is empty
     private Color tileColor,
                  empty = Color.white, 
@@ -29,14 +30,33 @@ public class ItemGridObject {
     public ItemGridObject(State state) {this.state = state; setColor();}
     public ItemGridObject() : this(State.Empty) {}
 
+    public PlacedItem GetItem() {return placedItem;}
+    public void SetItem(PlacedItem placedItem) {
+        this.placedItem = placedItem;
+        this.state = State.Used;
+    }
+    public void ClearItem() {
+        this.placedItem = null;
+        this.state = State.Empty;
+        if (grid != null) {
+            grid.TriggerGridObjectChanged(x,y);
+        }    
+    }
+
+    public void TriggerGridObjectChanged() {
+            grid.TriggerGridObjectChanged(x, y);
+    }
+
     public void setState(State state) {
         this.state = state; 
         //every time the state of the object is changed, trigger the grid event to update the object's state
         if (grid != null)  {
             grid.TriggerGridObjectChanged(x,y); //this is why we need the reference to the grid from within each object on the grid
         }
-        } 
-        public State getState() {return this.state;}
+    } 
+    public State getState() {return this.state;}
+
+    public bool canPlace() {return this.state == State.Empty;}
 
     public Color getColor() {return tileColor;}
 

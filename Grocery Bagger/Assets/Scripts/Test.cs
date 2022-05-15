@@ -4,31 +4,30 @@ using UnityEngine;
 
 public class Test : MonoBehaviour
 {
-    private Grid<int> gridInt;
-    private Grid<bool> gridBool;
-    private ItemGrid<ItemGridObject> itemGrid;
-    private const float tileSize = 10f;
-    public List<Item> items; 
-    
-    private void Start()
-    {
-        // items.Add(new Item(2, 1, tileSize));
-        // items.Add(new Item(2, 1, tileSize));
-        // Debug.Log("items: " + items.Count);
-        // for(int i = 0; i < items.Count; ++i) {
-        //     Debug.Log("ID: " + items[i].getID());
-        // }
-        itemGrid = new ItemGrid<ItemGridObject>(10, 10, tileSize, new Vector3(-50,-50), 
-                                                (Grid<ItemGridObject> g, int x, int y) => new ItemGridObject(g,x,y), true);
+    [SerializeField] private Transform outerInventoryBackground;
+    [SerializeField] private Inventory inventory;
+    [SerializeField] private Inventory outerInventory;
+    [SerializeField] private List<string> addItemSaveList;
+
+    private int addItemSaveListIndex;
+
+    private void Start() {
+        outerInventoryBackground.gameObject.SetActive(false);
     }
+
     private void Update() {
-        if(Input.GetMouseButtonDown(0)) {           
-            ItemGridObject itemGridObject = itemGrid.GetData(GetMouseWorldPosition());
-            if(itemGridObject != null) {
-                itemGridObject.setState((itemGridObject.getState() == State.Empty) ? State.Used : State.Empty);
-            }
+        if (Input.GetKeyDown(KeyCode.Space)) {
+            outerInventoryBackground.gameObject.SetActive(true);
+            outerInventory.Load(addItemSaveList[addItemSaveListIndex]);
+
+            addItemSaveListIndex = (addItemSaveListIndex + 1) % addItemSaveList.Count;
+        }
+
+        if (Input.GetKeyDown(KeyCode.P)) {
+            Debug.Log(inventory.Save());
         }
     }
+
     public static Vector3 GetMouseWorldPosition() {
         Vector3 vec = GetMouseWorldPositionWithZ(Input.mousePosition, Camera.main);
         vec.z = 0f;
